@@ -22,14 +22,13 @@ namespace IngameScript
         INISerializer nameSerializer = new INISerializer("Blocknames");
 
         string MAINCAMERANAME { get { return (string)nameSerializer.GetValue("MAINCAMERANAME"); } }
-        string REMOTECONTROLNAME { get { return (string)nameSerializer.GetValue("REMOTECONTROLNAME"); } }
         string PROJECTORNAME { get { return (string)nameSerializer.GetValue("PROJECTORNAME"); } }
         string LEADPROJECTORNAME { get { return (string)nameSerializer.GetValue("LEADPROJECTORNAME"); } }
         string COCKPITNAME { get { return (string)nameSerializer.GetValue("COCKPITNAME"); } }
         
         INISerializer parameterSerializer = new INISerializer("Parameters");
-        double detectionRange { get { return (double)nameSerializer.GetValue("detectionRange"); } }
-        double projectionDistanceFromCockpit { get { return (double)nameSerializer.GetValue("projectionDistanceFromCockpit"); } }
+        double detectionRange { get { return (double)parameterSerializer.GetValue("detectionRange"); } }
+        double projectionDistanceFromCockpit { get { return (double)parameterSerializer.GetValue("projectionDistanceFromCockpit"); } }
 
         #endregion
 
@@ -75,7 +74,13 @@ namespace IngameScript
                 cam.EnableRaycast = true;
 
             mainCam = GridTerminalSystem.GetBlockWithName(MAINCAMERANAME) as IMyCameraBlock;
+            if (mainCam == null)
+                throw new Exception($"No camerablock named \"{MAINCAMERANAME}\"");
+
             cockpit = GridTerminalSystem.GetBlockWithName(COCKPITNAME) as IMyShipController;
+            if (cockpit == null)
+                throw new Exception($"No cockpit named \"{COCKPITNAME}\"");
+
             var proj = GridTerminalSystem.GetBlockWithName(PROJECTORNAME) as IMyProjector;
             var leadproj = GridTerminalSystem.GetBlockWithName(LEADPROJECTORNAME) as IMyProjector;
 
@@ -83,9 +88,11 @@ namespace IngameScript
             GridTerminalSystem.GetBlocksOfType(gunList, x => x is IMySmallGatlingGun);
             guns = new GunSequencer(gunList);
 
+            if (proj != null)
+                projector = new ProjectorVisualization(proj, new Vector3I(0, 1, 0));
 
-            projector = new ProjectorVisualization(proj, new Vector3I(0, 1, 0));
-            leadProjector = new ProjectorVisualization(leadproj, new Vector3I(0,-2,0));
+            if (leadproj != null)
+                leadProjector = new ProjectorVisualization(leadproj, new Vector3I(0,-2,0));
 
             autoAim = null;
             DisposeAuto();
@@ -93,7 +100,8 @@ namespace IngameScript
             random = new Random();
         }
 
-        public void Main(string argument)
+
+        public void Main(string argument, UpdateType uType)
         {
             //MUST BE EXECUTED AT THE START OF EACH TICK!
             cockpitpos = cockpit.GetPosition() + cockpit.WorldMatrix.Backward * 0.8 - cockpit.WorldMatrix.Up * 0.5;
@@ -159,16 +167,20 @@ namespace IngameScript
         {
             trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, 400);
 
-
-            projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
+            if (projector != null)
+                projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
 
             if (Vector3D.DistanceSquared(target.Position, cockpit.GetPosition()) < detectionRange * detectionRange)
             {
                 var intersection = trajectoryCalculation.SimulateTrajectory(target);
                 if (intersection.HasValue)
                 {
-                    leadProjector.UpdatePosition(cockpitpos + Vector3D.Normalize(intersection.Value - cockpitpos) * (projectionDistanceFromCockpit - 1));
-                    leadProjector.Enable();
+                    if (leadProjector != null)
+                    {
+                        leadProjector.UpdatePosition(cockpitpos + Vector3D.Normalize(intersection.Value - cockpitpos) * (projectionDistanceFromCockpit - 1));
+                        leadProjector.Enable();
+                    }
+
 
 
                     if (autoAim != null)
@@ -182,12 +194,14 @@ namespace IngameScript
                 }
                 else
                 {
-                    leadProjector.Disable();
+                    if (leadProjector != null)
+                        leadProjector.Disable();
                     DisposeAuto();
                 }
             } else
             {
-                leadProjector.Disable();
+                if (leadProjector != null)
+                    leadProjector.Disable();
                 DisposeAuto();
             }
 
@@ -199,7 +213,6 @@ namespace IngameScript
 
             for (int i = 0; i < 25; i ++)
             {
-                Echo($"Pass: {i}");
 
                 MyDetectedEntityInfo detected = default(MyDetectedEntityInfo);
                 if (i == 0)
@@ -221,7 +234,8 @@ namespace IngameScript
                     detection = new LongRangeDetection(detected.HitPosition.Value, cameras, this);
                     Echo($"Target aquired @ {detected.HitPosition.ToString()}");
 
-                    projector.Enable();
+                    if (projector != null)
+                        projector.Enable();
 
                     break;
                 }
@@ -256,8 +270,12 @@ namespace IngameScript
         public void DisposeDetection()
         {
             detection = null;
-            projector.Disable();
-            leadProjector.Disable();
+
+            if (projector != null)
+                projector.Disable();
+
+            if (leadProjector != null)
+                leadProjector.Disable();
         }
 
         public void DisposeAuto()

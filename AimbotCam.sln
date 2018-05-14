@@ -9,11 +9,15 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HaE Serialization", "..\..\
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HaE Visualization", "..\..\..\MDK_Projects\Shared Projects\HaE Visualization\HaE Visualization.shproj", "{F97D848C-73A1-455C-8A8D-5C546C45D2ED}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HaE DebugUtils", "..\..\..\MDK_Projects\Shared Projects\HaE DebugUtils\HaE DebugUtils.shproj", "{DCDCEEA4-BFF4-4D63-A9C8-81DFF30FB34A}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\..\..\MDK_Projects\Shared Projects\HaE Serialization\HaE Serialization.projitems*{633d8b24-4b3b-4c26-9480-dba498cc7831}*SharedItemsImports = 13
+		..\..\..\MDK_Projects\Shared Projects\HaE DebugUtils\HaE DebugUtils.projitems*{6f4e45bb-738c-46d6-92fa-490bd33957e4}*SharedItemsImports = 4
 		..\..\..\MDK_Projects\Shared Projects\HaE Serialization\HaE Serialization.projitems*{6f4e45bb-738c-46d6-92fa-490bd33957e4}*SharedItemsImports = 4
 		..\..\..\MDK_Projects\Shared Projects\HaE Visualization\HaE Visualization.projitems*{6f4e45bb-738c-46d6-92fa-490bd33957e4}*SharedItemsImports = 4
+		..\..\..\MDK_Projects\Shared Projects\HaE DebugUtils\HaE DebugUtils.projitems*{dcdceea4-bff4-4d63-a9c8-81dff30fb34a}*SharedItemsImports = 13
 		..\..\..\MDK_Projects\Shared Projects\HaE Visualization\HaE Visualization.projitems*{f97d848c-73a1-455c-8a8d-5c546c45d2ed}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -26,7 +26,7 @@ namespace IngameScript
             public MyDetectedEntityInfo targetI;
 
             private double maximumDistance = 10000;
-            private MyRelationsBetweenPlayerAndBlock[] bad = { MyRelationsBetweenPlayerAndBlock.Enemies, MyRelationsBetweenPlayerAndBlock.Neutral };
+            private MyRelationsBetweenPlayerAndBlock[] bad = { MyRelationsBetweenPlayerAndBlock.Enemies, MyRelationsBetweenPlayerAndBlock.Neutral, MyRelationsBetweenPlayerAndBlock.NoOwnership};
 
             private int ticksFromLastFind = 0;
             private int ticksTimeout = 480;
