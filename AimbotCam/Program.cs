@@ -25,10 +25,17 @@ namespace IngameScript
         string PROJECTORNAME { get { return (string)nameSerializer.GetValue("PROJECTORNAME"); } }
         string LEADPROJECTORNAME { get { return (string)nameSerializer.GetValue("LEADPROJECTORNAME"); } }
         string COCKPITNAME { get { return (string)nameSerializer.GetValue("COCKPITNAME"); } }
-        
+        string MISSILECONTROLLER { get { return (string)nameSerializer.GetValue("MISSILECONTROLLER"); } }
+
+
         INISerializer parameterSerializer = new INISerializer("Parameters");
         double detectionRange { get { return (double)parameterSerializer.GetValue("detectionRange"); } }
         double projectionDistanceFromCockpit { get { return (double)parameterSerializer.GetValue("projectionDistanceFromCockpit"); } }
+        Vector3I projectionOffset { get { return new Vector3I(
+            (int)parameterSerializer.GetValue("projectionOffsetX"), 
+            (int)parameterSerializer.GetValue("projectionOffsetY"), 
+            (int)parameterSerializer.GetValue("projectionOffsetZ")
+            ); } }
 
         #endregion
 
@@ -43,6 +50,7 @@ namespace IngameScript
         List<IMyCameraBlock> cameras;
         IMyCameraBlock mainCam;
         IMyShipController cockpit;
+        IMyProgrammableBlock missileManager;
 
         GyroRotation autoAim;
         GunSequencer guns;
@@ -56,9 +64,14 @@ namespace IngameScript
             nameSerializer.AddValue("PROJECTORNAME", x => x, "Proj");
             nameSerializer.AddValue("LEADPROJECTORNAME", x => x, "LeadProj");
             nameSerializer.AddValue("COCKPITNAME", x => x, "Cockpit");
+            nameSerializer.AddValue("MISSILECONTROLLER", x => x, "MissileController");
 
             parameterSerializer.AddValue("detectionRange", x => double.Parse(x), 1000);
             parameterSerializer.AddValue("projectionDistanceFromCockpit", x => double.Parse(x), 30);
+
+            parameterSerializer.AddValue("projectionOffsetX", x => int.Parse(x), 0);
+            parameterSerializer.AddValue("projectionOffsetY", x => int.Parse(x), 0);
+            parameterSerializer.AddValue("projectionOffsetZ", x => int.Parse(x), 0);
 
             string customDat = Me.CustomData;
             nameSerializer.FirstSerialization(ref customDat);
@@ -89,10 +102,12 @@ namespace IngameScript
             guns = new GunSequencer(gunList);
 
             if (proj != null)
-                projector = new ProjectorVisualization(proj, new Vector3I(0, 1, 0));
+                projector = new ProjectorVisualization(proj, projectionOffset);
 
             if (leadproj != null)
-                leadProjector = new ProjectorVisualization(leadproj, new Vector3I(0,-2,0));
+                leadProjector = new ProjectorVisualization(leadproj, projectionOffset);
+
+            missileManager = GridTerminalSystem.GetBlockWithName(MISSILECONTROLLER) as IMyProgrammableBlock;
 
             autoAim = null;
             DisposeAuto();
@@ -141,6 +156,16 @@ namespace IngameScript
                     DisposeAuto();
                     guns.StopShooting();
                 }     
+            }
+            else if (argument.ToUpper() == "TRYLAUNCHMISSILE")
+            {
+                if (detection != null && missileManager != null)
+                {
+                    if (detection.hasTarget)
+                    {
+                        missileManager.TryRun($"DeployAtTarget|{detection.GetPredictedTargetLocation()}");
+                    }
+                }
             }
 
                 //Eachtick
