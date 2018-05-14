@@ -18,7 +18,7 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        #region Names
+        #region Serializers
         INISerializer nameSerializer = new INISerializer("Blocknames");
 
         string MAINCAMERANAME { get { return (string)nameSerializer.GetValue("MAINCAMERANAME"); } }
@@ -26,10 +26,14 @@ namespace IngameScript
         string PROJECTORNAME { get { return (string)nameSerializer.GetValue("PROJECTORNAME"); } }
         string LEADPROJECTORNAME { get { return (string)nameSerializer.GetValue("LEADPROJECTORNAME"); } }
         string COCKPITNAME { get { return (string)nameSerializer.GetValue("COCKPITNAME"); } }
+        
+        INISerializer parameterSerializer = new INISerializer("Parameters");
+        double detectionRange { get { return (double)nameSerializer.GetValue("detectionRange"); } }
+        double projectionDistanceFromCockpit { get { return (double)nameSerializer.GetValue("projectionDistanceFromCockpit"); } }
+
         #endregion
 
-        double detectionRange = 1000;
-        double projectionDistanceFromCockpit = 30;
+
         Vector3D cockpitpos;
         Random random;
 
@@ -56,10 +60,15 @@ namespace IngameScript
             nameSerializer.AddValue("LEADPROJECTORNAME", x => x, "LeadProj");
             nameSerializer.AddValue("COCKPITNAME", x => x, "Cockpit");
 
+            parameterSerializer.AddValue("detectionRange", x => double.Parse(x), 1000);
+            parameterSerializer.AddValue("projectionDistanceFromCockpit", x => double.Parse(x), 30);
+
             string customDat = Me.CustomData;
             nameSerializer.FirstSerialization(ref customDat);
+            parameterSerializer.FirstSerialization(ref customDat);
             Me.CustomData = customDat;
             nameSerializer.DeSerialize(Me.CustomData);
+            parameterSerializer.DeSerialize(Me.CustomData);
             #endregion
 
             cameras = new List<IMyCameraBlock>();
@@ -156,7 +165,7 @@ namespace IngameScript
 
             projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
 
-            if (Vector3D.DistanceSquared(target.Position, rc.GetPosition()) < 850 * 850)
+            if (Vector3D.DistanceSquared(target.Position, rc.GetPosition()) < detectionRange * detectionRange)
             {
                 var intersection = trajectoryCalculation.SimulateTrajectory(target);
                 if (intersection.HasValue)
