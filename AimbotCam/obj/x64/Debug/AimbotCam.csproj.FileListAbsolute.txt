@@ -1,0 +1,58 @@
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\AimbotCam.exe
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\AimbotCam.pdb
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\MDKUtilities.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\HavokWrapper.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\VRage.OpenVRWrapper.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\VRage.Ansel.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.Desktop.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.Mathematics.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\System.Collections.Immutable.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.DirectInput.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\DirectShowLib-2005.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\System.Reflection.Metadata.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.Desktop.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.Mathematics.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.CSharp.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\System.Collections.Immutable.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\SharpDX.DirectInput.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\System.Reflection.Metadata.xml
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csproj.CoreCompileInputs.cache
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.exe
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.pdb
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csprojResolveAssemblyReference.cache
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\bin\VRage.Native.dll
+C:\Users\SirHa\Documents\Visual Studio 2017\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csproj.CopyComplete
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\AimbotCam.exe
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\AimbotCam.pdb
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\MDKUtilities.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\HavokWrapper.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\VRage.Native.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\VRage.OpenVRWrapper.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\VRage.Ansel.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.Desktop.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.Mathematics.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.CSharp.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\System.Collections.Immutable.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.DirectInput.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\DirectShowLib-2005.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\System.Reflection.Metadata.dll
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.Desktop.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.Mathematics.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\Microsoft.CodeAnalysis.CSharp.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\System.Collections.Immutable.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\SharpDX.DirectInput.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\bin\System.Reflection.Metadata.xml
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csprojAssemblyReference.cache
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csproj.CoreCompileInputs.cache
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.csproj.CopyComplete
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.exe
+D:\Visual Studio\Projects\AimbotCam\AimbotCam\obj\x64\Debug\AimbotCam.pdb
