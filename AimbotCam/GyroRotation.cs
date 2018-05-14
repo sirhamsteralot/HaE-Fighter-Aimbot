@@ -21,18 +21,18 @@ namespace IngameScript
         public class GyroRotation
         {
             private List<IMyGyro> gyros = new List<IMyGyro>();
-            private IMyShipController rc;
+            private IMyShipController cockpit;
 
             public Vector3D target;
 
             Program P;
 
-            public GyroRotation(Program P, IMyShipController rc)
+            public GyroRotation(Program P, IMyShipController cockpit)
             {
                 this.P = P;
 
                 P.GridTerminalSystem.GetBlocksOfType(gyros);
-                this.rc = rc;
+                this.cockpit = cockpit;
             }
 
             public void mainRotate()
@@ -45,7 +45,7 @@ namespace IngameScript
 
             private void Rotate()
             {
-                GyroUtils.PointInDirection(gyros, rc, target, 5);
+                GyroUtils.PointInDirection(gyros, cockpit, target, 5);
             }
 
             public void SetTarget(Vector3D NewTarget)
@@ -81,7 +81,7 @@ namespace IngameScript
                 NewTarget = Vector3D.Multiply(NewTarget, howFarOut);
 
                 //create waypoint out in the targetDirection
-                NewTarget = rc.GetPosition() + NewTarget;
+                NewTarget = cockpit.GetPosition() + NewTarget;
 
                 if (!target.Equals(NewTarget))
                 {

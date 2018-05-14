@@ -9,4 +9,5 @@
   <ignore>
     <folder>mdk</folder>
   </ignore>
+  <trimtypes>yes</trimtypes>
 </mdk>

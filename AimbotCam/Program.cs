@@ -43,7 +43,6 @@ namespace IngameScript
         ProjectorVisualization leadProjector;
         List<IMyCameraBlock> cameras;
         IMyCameraBlock mainCam;
-        IMyRemoteControl rc;
         IMyShipController cockpit;
 
         GyroRotation autoAim;
@@ -55,7 +54,6 @@ namespace IngameScript
 
             #region serializer
             nameSerializer.AddValue("MAINCAMERANAME", x => x, "AimCamera");
-            nameSerializer.AddValue("REMOTECONTROLNAME", x => x, "Remote");
             nameSerializer.AddValue("PROJECTORNAME", x => x, "Proj");
             nameSerializer.AddValue("LEADPROJECTORNAME", x => x, "LeadProj");
             nameSerializer.AddValue("COCKPITNAME", x => x, "Cockpit");
@@ -77,7 +75,6 @@ namespace IngameScript
                 cam.EnableRaycast = true;
 
             mainCam = GridTerminalSystem.GetBlockWithName(MAINCAMERANAME) as IMyCameraBlock;
-            rc = GridTerminalSystem.GetBlockWithName(REMOTECONTROLNAME) as IMyRemoteControl;
             cockpit = GridTerminalSystem.GetBlockWithName(COCKPITNAME) as IMyShipController;
             var proj = GridTerminalSystem.GetBlockWithName(PROJECTORNAME) as IMyProjector;
             var leadproj = GridTerminalSystem.GetBlockWithName(LEADPROJECTORNAME) as IMyProjector;
@@ -110,7 +107,7 @@ namespace IngameScript
             else if (argument.ToUpper() == "AUTOMATIC")
             {
                 if (autoAim == null)
-                    autoAim = new GyroRotation(this, rc);
+                    autoAim = new GyroRotation(this, cockpit);
                 else
                     DisposeAuto();
 
@@ -127,7 +124,7 @@ namespace IngameScript
             {
                 if (autoAim == null)
                 {
-                    autoAim = new GyroRotation(this, rc);
+                    autoAim = new GyroRotation(this, cockpit);
                     if (!guns.firing)
                         guns.Shoot();
                 }
@@ -160,12 +157,12 @@ namespace IngameScript
 
         public void GetTargetInterception(MyDetectedEntityInfo target)
         {
-            trajectoryCalculation = new Trajectory(rc.GetShipVelocities().LinearVelocity, cockpitpos, rc.WorldMatrix.Forward, 400);
+            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, 400);
 
 
             projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
 
-            if (Vector3D.DistanceSquared(target.Position, rc.GetPosition()) < detectionRange * detectionRange)
+            if (Vector3D.DistanceSquared(target.Position, cockpit.GetPosition()) < detectionRange * detectionRange)
             {
                 var intersection = trajectoryCalculation.SimulateTrajectory(target);
                 if (intersection.HasValue)
