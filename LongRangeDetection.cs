@@ -24,6 +24,7 @@ namespace IngameScript
             public bool foundInitialTarget = false;
             public bool hasTarget = false;
             public MyDetectedEntityInfo targetI;
+            public MyDetectedEntityInfo targetOld;
 
             private double maximumDistance = 10000;
             private MyRelationsBetweenPlayerAndBlock[] bad = { MyRelationsBetweenPlayerAndBlock.Enemies, MyRelationsBetweenPlayerAndBlock.Neutral, MyRelationsBetweenPlayerAndBlock.NoOwnership};
@@ -116,6 +117,7 @@ namespace IngameScript
                 {
                     if (tempTarget.Relationship == bad[0] || tempTarget.Relationship == bad[1])
                     {
+                        targetOld = targetI;
                         targetI = tempTarget;
 
                         P.Echo("initial target found!");

@@ -174,7 +174,7 @@ namespace IngameScript
 
                 if(detection.DoDetect())
                 {
-                    GetTargetInterception(detection.targetI);
+                    GetTargetInterception(detection.targetI, detection.targetOld);
                 }
 
                 if (!detection.hasTarget)
@@ -188,7 +188,7 @@ namespace IngameScript
             
         }
 
-        public void GetTargetInterception(MyDetectedEntityInfo target)
+        public void GetTargetInterception(MyDetectedEntityInfo target, MyDetectedEntityInfo oldTarget)
         {
             trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, 400);
 
@@ -197,7 +197,14 @@ namespace IngameScript
 
             if (Vector3D.DistanceSquared(target.Position, cockpit.GetPosition()) < detectionRange * detectionRange)
             {
-                var intersection = trajectoryCalculation.SimulateTrajectory(target);
+                Vector3D acceleration = Vector3D.Zero;
+
+                if (!oldTarget.IsEmpty())
+                {
+                    acceleration = target.Velocity - oldTarget.Velocity;
+                }
+
+                var intersection = trajectoryCalculation.SimulateTrajectory(target, acceleration);
                 if (intersection.HasValue)
                 {
                     if (leadProjector != null)
