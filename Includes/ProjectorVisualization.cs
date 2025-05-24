@@ -53,12 +53,14 @@ namespace IngameScript
 
             public void Enable()
             {
-                projector.Enabled = true;
+                if (!projector.Enabled)
+                    projector.Enabled = true;
             }
 
             public void Disable()
             {
-                projector.Enabled = false;
+                if (projector.Enabled)
+                    projector.Enabled = false;
             }
         }
 	}

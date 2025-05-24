@@ -21,21 +21,21 @@ namespace IngameScript
         public class TurretDetection
         {
             public const float maxRange = 45f;
-            public const float Timeout = 2500;
+            public const long Timeout = 120;
 
             public List<IMyTurretControlBlock> turrets;
             public MyDetectedEntityInfo detected;
+            long detectedTicks = 0;
             public MyDetectedEntityInfo oldDetected;
 
             public bool currentlyTracking = false;
-            public long mostRecentTime = 0;
 
             public TurretDetection(List<IMyTurretControlBlock> turrets)
             {
                 this.turrets = turrets;
             }
 
-            public void GetTarget()
+            public void GetTarget(long currentTime)
             {
                 MyDetectedEntityInfo newDetected;
 
@@ -44,10 +44,11 @@ namespace IngameScript
                     newDetected = turret.GetTargetedEntity();
                     if (!newDetected.IsEmpty())
                     {
-                        mostRecentTime = newDetected.TimeStamp;
+
                         if (currentlyTracking == false || (newDetected.Position - oldDetected.Position).LengthSquared() < maxRange * maxRange)
                         {
                             oldDetected = detected;
+                            detectedTicks = currentTime;
                             detected = newDetected;
                             currentlyTracking = true;
                             break;
@@ -55,7 +56,8 @@ namespace IngameScript
                     }
                 }
 
-                if (mostRecentTime - detected.TimeStamp > Timeout)
+
+                if (currentTime - detectedTicks > Timeout)
                 {
                     currentlyTracking = false;
                 }

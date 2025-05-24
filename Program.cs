@@ -29,6 +29,9 @@ namespace IngameScript
 
         INISerializer parameterSerializer = new INISerializer("Parameters");
         double projectionDistanceFromCockpit { get { return (double)parameterSerializer.GetValue("projectionDistanceFromCockpit"); } }
+        double projectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
+
+
         Vector3I projectionOffset { get { return new Vector3I(
             (int)parameterSerializer.GetValue("projectionOffsetX"), 
             (int)parameterSerializer.GetValue("projectionOffsetY"), 
@@ -62,6 +65,7 @@ namespace IngameScript
             nameSerializer.AddValue("MISSILECONTROLLER", x => x, "MissileController");
 
             parameterSerializer.AddValue("projectionDistanceFromCockpit", x => double.Parse(x), 30);
+            parameterSerializer.AddValue("projectileVelocity", x => double.Parse(x), 400);
 
             parameterSerializer.AddValue("projectionOffsetX", x => int.Parse(x), 0);
             parameterSerializer.AddValue("projectionOffsetY", x => int.Parse(x), 0);
@@ -92,9 +96,13 @@ namespace IngameScript
 
             if (proj != null)
                 projector = new ProjectorVisualization(proj, projectionOffset);
+            else
+                Echo("No Target Projector found");
 
             if (leadproj != null)
                 leadProjector = new ProjectorVisualization(leadproj, projectionOffset);
+            else
+                Echo("No Lead Projector found");
 
             missileManager = GridTerminalSystem.GetBlockWithName(MISSILECONTROLLER) as IMyProgrammableBlock;
 
@@ -141,7 +149,7 @@ namespace IngameScript
                 }
             }
 
-            turretDetection.GetTarget();
+            turretDetection.GetTarget(Runtime.LifetimeTicks);
 
             if (turretDetection.currentlyTracking)
             {
@@ -149,6 +157,8 @@ namespace IngameScript
             }
             else
             {
+                Echo("not tracking...");
+
                 if (leadProjector != null)
                     leadProjector.Disable();
 
@@ -161,12 +171,13 @@ namespace IngameScript
 
         public void GetTargetInterception(MyDetectedEntityInfo target, MyDetectedEntityInfo oldTarget)
         {
-            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, 400);
+            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, projectileVelocity);
 
             if (projector != null)
             {
                 projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
                 projector.Enable();
+                Echo("Updated Projector");
             }
 
 
@@ -184,6 +195,7 @@ namespace IngameScript
                 {
                     leadProjector.UpdatePosition(cockpitpos + Vector3D.Normalize(intersection.Value - cockpitpos) * (projectionDistanceFromCockpit - 1));
                     leadProjector.Enable();
+                    Echo("Updated leadProjector");
                 }
 
 
@@ -198,6 +210,8 @@ namespace IngameScript
             }
             else
             {
+                Echo("Disabling Targeting/Projectors");
+
                 if (leadProjector != null)
                     leadProjector.Disable();
 
