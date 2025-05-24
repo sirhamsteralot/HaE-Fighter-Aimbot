@@ -197,11 +197,11 @@ namespace IngameScript
 
             if (Vector3D.DistanceSquared(target.Position, cockpit.GetPosition()) < detectionRange * detectionRange)
             {
-                Vector3D acceleration = Vector3D.Zero;
+                Vector3D acceleration = -cockpit.GetNaturalGravity();
 
                 if (!oldTarget.IsEmpty())
                 {
-                    acceleration = target.Velocity - oldTarget.Velocity;
+                    acceleration += target.Velocity - oldTarget.Velocity;
                 }
 
                 var intersection = trajectoryCalculation.SimulateTrajectory(target, acceleration);

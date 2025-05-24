@@ -67,7 +67,7 @@ namespace IngameScript
                         if (Vector3D.Distance(P.cockpitpos, targetI.Position) <= maximumDistance)
                         {
 
-                            if (RayCastTarget(GetTargetAfterTicks(targetI, ticksFromLastFind)))
+                            if (RayCastTarget(GetTargetAfterTicks(targetI, targetOld, ticksFromLastFind)))
                             {
 
                                 foundTarget = true;
@@ -130,9 +130,13 @@ namespace IngameScript
                 return false;
             }
 
-            private Vector3D GetTargetAfterTicks(MyDetectedEntityInfo detectedT, int ticks)
+            private Vector3D GetTargetAfterTicks(MyDetectedEntityInfo detectedT, MyDetectedEntityInfo olDetectedT, int ticks)
             {
-                return detectedT.Position + Vector3D.Multiply(detectedT.Velocity, (ticks / 60)) + Vector3D.Multiply(Vector3D.Normalize(detectedT.Position - P.Me.GetPosition()), 5);
+                Vector3D acceleration = Vector3D.Multiply(detectedT.Velocity - olDetectedT.Velocity, ticks/60.0/2);
+                Vector3D velocity = Vector3D.Multiply(detectedT.Velocity, (ticks / 60.0));
+                Vector3D raycastOffset = Vector3D.Multiply(Vector3D.Normalize(detectedT.Position - P.Me.GetPosition()), 5);
+
+                return detectedT.Position + velocity + acceleration + raycastOffset;
             }
 
             private Vector3D SpreadVectors(Vector3D vector, double ConeAngle = 0.1243549945)

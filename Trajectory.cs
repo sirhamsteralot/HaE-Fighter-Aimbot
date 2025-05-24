@@ -25,6 +25,7 @@ namespace IngameScript
             private Vector3D _myPosition;
             private Vector3D _myDirection;
             private double _projectileMaxVelocity;
+            private const double AimTimeConstant = 0.2;
 
             public Trajectory(Vector3D MyVelocity, Vector3D MyPosition, Vector3D MyDirection, double ProjectileVelocity)
             {
@@ -65,7 +66,7 @@ namespace IngameScript
                 if (t == null)
                     return null;
 
-                double time = t.Value;
+                double time = t.Value + AimTimeConstant;
                 Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * acceleration * time * time;
 
                 return futureTargetPosition;
