@@ -25,10 +25,11 @@ namespace IngameScript
 
         INISerializer parameterSerializer = new INISerializer("Parameters");
         double projectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
+        double _projectileVelocity;
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.0.1";
+        const string versionString = "v1.1.0";
 
         int update100Counter = 0;
         double averageRuntime = 0;
@@ -36,11 +37,11 @@ namespace IngameScript
         Random random;
 
         TurretDetection turretDetection;
-        Trajectory trajectoryCalculation;
         IMyShipController cockpit;
-        IMyProgrammableBlock missileManager;
 
         GyroRotation autoAim;
+
+        Vector3D oldTargetAcceleration;
 
         public Program()
         {
@@ -73,30 +74,40 @@ namespace IngameScript
             DisposeAuto();
 
             random = new Random();
+            _projectileVelocity = projectileVelocity;
         }
 
         public void Main(string argument, UpdateType updateSource)
         {
-            averageRuntime = averageRuntime * (1 - 0.05) + Runtime.LastRunTimeMs * 0.95;
+            averageRuntime = averageRuntime * 0.05 + Runtime.LastRunTimeMs * 0.95;
 
             if ((updateSource & UpdateType.Update100) == UpdateType.Update100)
             {
                 Echo($"HaE Fighter Aimbot {versionString}");
                 Echo(runningIndicator[update100Counter++ % runningIndicator.Length]);
+                Echo($"tracking: {turretDetection.currentlyTracking}");
                 Echo($"runtime average: {averageRuntime:N4}");
             }
+
 
             if (argument.ToUpper() == "AUTOMATIC")
             {
                 if (autoAim == null)
+                {
+                    Echo("Automatic!");
                     autoAim = new GyroRotation(this, cockpit);
+                }
                 else
-                    DisposeAuto();
+                {
+                    Echo("Automatic Disabled!");
 
-                Echo("Automatic!");
+                    DisposeAuto();
+                }
+
+
             }
 
-            if (autoAim != null || (updateSource | UpdateType.Update10) == UpdateType.Update10)
+            if (autoAim != null || ((updateSource & UpdateType.Update10) == UpdateType.Update10))
             {
                 turretDetection.GetTarget(Runtime.LifetimeTicks);
 
@@ -105,21 +116,28 @@ namespace IngameScript
                     GetTargetInterception(turretDetection.detected, turretDetection.oldDetected);
                 }
             }
+
+            if ((updateSource & UpdateType.Update1) == UpdateType.Update1 && autoAim != null)
+            {
+                autoAim.MainRotate(Runtime.LifetimeTicks);
+            }
         }
 
         public void GetTargetInterception(MyDetectedEntityInfo target, MyDetectedEntityInfo oldTarget)
         {
-            Vector3D cockpitPosition = cockpit.GetPosition();
-            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitPosition, cockpit.WorldMatrix.Forward, projectileVelocity);
-
+            Vector3D cockpitPosition = cockpit.WorldMatrix.Translation;
+            Vector3D velocity = cockpit.GetShipVelocities().LinearVelocity;
             Vector3D acceleration = -cockpit.GetNaturalGravity();
 
             if (!oldTarget.IsEmpty())
             {
-                acceleration += (target.Velocity - oldTarget.Velocity) * 60;
+                Vector3D targetAcceleration = Vector3D.Lerp((target.Velocity - oldTarget.Velocity) * 60, oldTargetAcceleration, 0.5);
+                oldTargetAcceleration = targetAcceleration;
+
+                acceleration += targetAcceleration;
             }
 
-            var intersection = trajectoryCalculation.SimulateTrajectory(target, acceleration);
+            var intersection = SimulateTrajectory(target, acceleration, cockpitPosition, velocity, projectileVelocity);
             if (intersection.HasValue)
             {
                 if (autoAim != null)
@@ -127,15 +145,13 @@ namespace IngameScript
                     var dist = intersection.Value - cockpitPosition;
                     var direction = SpreadVectors(Vector3D.Normalize(dist), 0.0174532925);
 
-                    autoAim.SetTarget(direction);
-                    autoAim.mainRotate();
+                    autoAim.SetTargetDirection(Vector3D.Normalize(direction));
                 }
             }
             else
             {
                 DisposeAuto();
             }
-        
         }
 
         private Vector3D SpreadVectors(Vector3D vector, double ConeAngle = 0.1243549945)
@@ -160,12 +176,50 @@ namespace IngameScript
 
             return Vector3D.Normalize(Vector3D.Multiply(Vector3D.Right, x) + Vector3D.Multiply(crossVec, y) + Vector3D.Multiply(vector, z));
         }
-        
+
         public void DisposeAuto()
         {
             if (autoAim != null)
                 autoAim.Dispose();
             autoAim = null;
         }
+
+        public Vector3D? SimulateTrajectory(MyDetectedEntityInfo target, Vector3D acceleration, Vector3D myPosition, Vector3D myVelocity, double projectileVelocity)
+        {
+            Vector3D relVelocity = target.Velocity - myVelocity;
+            Vector3D P0 = target.Position;
+            Vector3D V0 = relVelocity;
+
+            if (V0.LengthSquared() < 0.0001) // More robust zero-speed check
+                return P0;
+
+            Vector3D P1 = myPosition;
+            Vector3D D = P0 - P1;
+            double projectileSpeed = projectileVelocity;
+
+            Vector3D halfA = 0.5 * acceleration;
+
+            // Quartic coefficients: a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
+            double a = halfA.LengthSquared();
+            double b = 2 * Vector3D.Dot(halfA, V0);
+            double c = V0.LengthSquared() + 2 * Vector3D.Dot(halfA, D) - projectileSpeed * projectileSpeed;
+            double d = 2 * Vector3D.Dot(V0, D);
+            double e = D.LengthSquared();
+
+            // Solve quartic for time-to-intercept
+            double? t = FastRootSolver.SolveQuarticFast(a, b, c, d, e);
+
+            if (!t.HasValue || t.Value < 0)
+                return null;
+
+            double time = t.Value;
+
+            // Predict future target position using uniformly accelerated motion
+            Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * acceleration * time * time;
+
+            return futureTargetPosition;
+        }
+        
+
     }
 }

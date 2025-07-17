@@ -44,18 +44,13 @@ namespace IngameScript
                     newDetected = turret.GetTargetedEntity();
                     if (!newDetected.IsEmpty())
                     {
-
-                        if (currentlyTracking == false || (newDetected.Position - oldDetected.Position).LengthSquared() < maxRange * maxRange)
-                        {
-                            oldDetected = detected;
-                            detectedTicks = currentTime;
-                            detected = newDetected;
-                            currentlyTracking = true;
-                            break;
-                        }
+                        oldDetected = detected;
+                        detected = newDetected;
+                        detectedTicks = currentTime;
+                        currentlyTracking = true;
+                        break;
                     }
                 }
-
 
                 if (currentTime - detectedTicks > Timeout)
                 {

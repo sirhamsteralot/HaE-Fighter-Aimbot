@@ -22,6 +22,8 @@ namespace IngameScript
         {
             private List<IMyGyro> gyros = new List<IMyGyro>();
             private IMyShipController cockpit;
+            private PIDController yawPID = new PIDController(6, 0.0, 0.0);
+            private PIDController pitchPID = new PIDController(6, 0.0, 0.0);
 
             public Vector3D target;
             public GyroRotation(Program P, IMyShipController cockpit)
@@ -30,20 +32,21 @@ namespace IngameScript
                 this.cockpit = cockpit;
             }
 
-            public void mainRotate()
+            public void MainRotate(long currentPbTime)
             {
                 if (target != null)
                 {
-                    Rotate();
+                    Rotate(currentPbTime);
                 }
             }
 
-            private void Rotate()
+            private void Rotate(long currentPbTime)
             {
-                GyroUtils.PointInDirection(gyros, cockpit, target, 5);
+                if (target != Vector3D.Zero)
+                    AimInDirection(target, currentPbTime);
             }
 
-            public void SetTarget(Vector3D NewTarget)
+            public void SetTargetDirection(Vector3D NewTarget)
             {
                 if (!target.Equals(NewTarget))
                 {
@@ -51,23 +54,30 @@ namespace IngameScript
                 }
             }
 
-            public void SetTargetDirection(Vector3D direction, double howFarOut)
+            private void AimInDirection(Vector3D aimDirection, long currentPbTime)
             {
-                //Normalize dis
-                Vector3D NewTarget = direction;
-                NewTarget.Normalize();
+                var refMatrix = cockpit.WorldMatrix;
+                double t = currentPbTime * 1.0/60.0;
+                Vector3D forward = refMatrix.Forward;
+                Vector3D up = refMatrix.Up;
+                Vector3D left = refMatrix.Left;
 
-                //Set the lenght of Newtarget to howFarOut in M
-                NewTarget = Vector3D.Multiply(NewTarget, howFarOut);
+                Vector3D PitchVector = SafeNormalize(VectorUtils.ProjectOnPlane(left, aimDirection));
+                Vector3D YawVector = SafeNormalize(VectorUtils.ProjectOnPlane(up, aimDirection));
 
-                //create waypoint out in the targetDirection
-                NewTarget = cockpit.GetPosition() + NewTarget;
+                double pitchAngle = VectorUtils.SignedAngle(PitchVector, forward, left);
+                double yawAngle = VectorUtils.SignedAngle(YawVector, forward, up);
+                double pitchInput = pitchPID.Compute(pitchAngle, t);
+                double yawInput = yawPID.Compute(yawAngle, t);
 
-                if (!target.Equals(NewTarget))
-                {
-                    target = NewTarget;
-                }
+                GyroUtils.ApplyGyroOverride(gyros, refMatrix, pitchInput, yawInput, 0);
             }
+
+            public static Vector3D SafeNormalize(Vector3D v, double tolerance = 1e-8)
+            {
+                return v.LengthSquared() > tolerance ? Vector3D.Normalize(v) : Vector3D.Zero;
+            }
+
 
             public void Dispose()
             {
