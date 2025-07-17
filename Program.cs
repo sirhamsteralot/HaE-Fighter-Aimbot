@@ -21,55 +21,34 @@ namespace IngameScript
         #region Serializers
         INISerializer nameSerializer = new INISerializer("Blocknames");
 
-        string PROJECTORNAME { get { return (string)nameSerializer.GetValue("PROJECTORNAME"); } }
-        string LEADPROJECTORNAME { get { return (string)nameSerializer.GetValue("LEADPROJECTORNAME"); } }
         string COCKPITNAME { get { return (string)nameSerializer.GetValue("COCKPITNAME"); } }
-        string MISSILECONTROLLER { get { return (string)nameSerializer.GetValue("MISSILECONTROLLER"); } }
-
 
         INISerializer parameterSerializer = new INISerializer("Parameters");
-        double projectionDistanceFromCockpit { get { return (double)parameterSerializer.GetValue("projectionDistanceFromCockpit"); } }
         double projectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
-
-
-        Vector3I projectionOffset { get { return new Vector3I(
-            (int)parameterSerializer.GetValue("projectionOffsetX"), 
-            (int)parameterSerializer.GetValue("projectionOffsetY"), 
-            (int)parameterSerializer.GetValue("projectionOffsetZ")
-            ); } }
-
         #endregion
 
+        private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
+        const string versionString = "v1.0.1";
 
-        Vector3D cockpitpos;
+        int update100Counter = 0;
+        double averageRuntime = 0;
+
         Random random;
 
         TurretDetection turretDetection;
         Trajectory trajectoryCalculation;
-        ProjectorVisualization projector;
-        ProjectorVisualization leadProjector;
         IMyShipController cockpit;
         IMyProgrammableBlock missileManager;
 
         GyroRotation autoAim;
-        GunSequencer guns;
 
         public Program()
         {
-            Runtime.UpdateFrequency = UpdateFrequency.Update1;
+            Runtime.UpdateFrequency = UpdateFrequency.Update1 | UpdateFrequency.Update10 | UpdateFrequency.Update100;
 
             #region serializer
-            nameSerializer.AddValue("PROJECTORNAME", x => x, "Proj");
-            nameSerializer.AddValue("LEADPROJECTORNAME", x => x, "LeadProj");
             nameSerializer.AddValue("COCKPITNAME", x => x, "Cockpit");
-            nameSerializer.AddValue("MISSILECONTROLLER", x => x, "MissileController");
-
-            parameterSerializer.AddValue("projectionDistanceFromCockpit", x => double.Parse(x), 30);
             parameterSerializer.AddValue("projectileVelocity", x => double.Parse(x), 400);
-
-            parameterSerializer.AddValue("projectionOffsetX", x => int.Parse(x), 0);
-            parameterSerializer.AddValue("projectionOffsetY", x => int.Parse(x), 0);
-            parameterSerializer.AddValue("projectionOffsetZ", x => int.Parse(x), 0);
 
             string customDat = Me.CustomData;
             nameSerializer.FirstSerialization(ref customDat);
@@ -83,28 +62,12 @@ namespace IngameScript
             if (cockpit == null)
                 throw new Exception($"No cockpit named \"{COCKPITNAME}\"");
 
-            var proj = GridTerminalSystem.GetBlockWithName(PROJECTORNAME) as IMyProjector;
-            var leadproj = GridTerminalSystem.GetBlockWithName(LEADPROJECTORNAME) as IMyProjector;
-
             var gunList = new List<IMyUserControllableGun>();
             GridTerminalSystem.GetBlocksOfType(gunList, x => x is IMySmallGatlingGun);
-            guns = new GunSequencer(gunList);
 
             var turretList = new List<IMyTurretControlBlock>();
             GridTerminalSystem.GetBlocksOfType(turretList);
             turretDetection = new TurretDetection(turretList);
-
-            if (proj != null)
-                projector = new ProjectorVisualization(proj, projectionOffset);
-            else
-                Echo("No Target Projector found");
-
-            if (leadproj != null)
-                leadProjector = new ProjectorVisualization(leadproj, projectionOffset);
-            else
-                Echo("No Lead Projector found");
-
-            missileManager = GridTerminalSystem.GetBlockWithName(MISSILECONTROLLER) as IMyProgrammableBlock;
 
             autoAim = null;
             DisposeAuto();
@@ -112,11 +75,16 @@ namespace IngameScript
             random = new Random();
         }
 
-
-        public void Main(string argument, UpdateType uType)
+        public void Main(string argument, UpdateType updateSource)
         {
-            //MUST BE EXECUTED AT THE START OF EACH TICK!
-            cockpitpos = cockpit.GetPosition() + cockpit.WorldMatrix.Backward * 0.8 - cockpit.WorldMatrix.Up * 0.5;
+            averageRuntime = averageRuntime * (1 - 0.05) + Runtime.LastRunTimeMs * 0.95;
+
+            if ((updateSource & UpdateType.Update100) == UpdateType.Update100)
+            {
+                Echo($"HaE Fighter Aimbot {versionString}");
+                Echo(runningIndicator[update100Counter++ % runningIndicator.Length]);
+                Echo($"runtime average: {averageRuntime:N4}");
+            }
 
             if (argument.ToUpper() == "AUTOMATIC")
             {
@@ -127,81 +95,36 @@ namespace IngameScript
 
                 Echo("Automatic!");
             }
-            else if (argument.ToUpper() == "HOLDFIRE")
+
+            if (autoAim != null || (updateSource | UpdateType.Update10) == UpdateType.Update10)
             {
-                if (!guns.firing)
-                    guns.Shoot();
-                else
-                    guns.StopShooting();
-            }
-            else if (argument.ToUpper() == "FULLAUTOMATIC")
-            {
-                if (autoAim == null)
+                turretDetection.GetTarget(Runtime.LifetimeTicks);
+
+                if (turretDetection.currentlyTracking)
                 {
-                    autoAim = new GyroRotation(this, cockpit);
-                    if (!guns.firing)
-                        guns.Shoot();
-                }
-                else
-                {
-                    DisposeAuto();
-                    guns.StopShooting();
+                    GetTargetInterception(turretDetection.detected, turretDetection.oldDetected);
                 }
             }
-
-            turretDetection.GetTarget(Runtime.LifetimeTicks);
-
-            if (turretDetection.currentlyTracking)
-            {
-                GetTargetInterception(turretDetection.detected, turretDetection.oldDetected);
-            }
-            else
-            {
-                Echo("not tracking...");
-
-                if (leadProjector != null)
-                    leadProjector.Disable();
-
-                if (projector != null)
-                    projector.Disable();
-            }
-
-            guns.Main();
         }
 
         public void GetTargetInterception(MyDetectedEntityInfo target, MyDetectedEntityInfo oldTarget)
         {
-            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitpos, cockpit.WorldMatrix.Forward, projectileVelocity);
-
-            if (projector != null)
-            {
-                projector.UpdatePosition(cockpitpos + Vector3D.Normalize(target.Position - cockpitpos) * projectionDistanceFromCockpit);
-                projector.Enable();
-                Echo("Updated Projector");
-            }
-
+            Vector3D cockpitPosition = cockpit.GetPosition();
+            trajectoryCalculation = new Trajectory(cockpit.GetShipVelocities().LinearVelocity, cockpitPosition, cockpit.WorldMatrix.Forward, projectileVelocity);
 
             Vector3D acceleration = -cockpit.GetNaturalGravity();
 
             if (!oldTarget.IsEmpty())
             {
-                acceleration += target.Velocity - oldTarget.Velocity;
+                acceleration += (target.Velocity - oldTarget.Velocity) * 60;
             }
 
             var intersection = trajectoryCalculation.SimulateTrajectory(target, acceleration);
             if (intersection.HasValue)
             {
-                if (leadProjector != null)
-                {
-                    leadProjector.UpdatePosition(cockpitpos + Vector3D.Normalize(intersection.Value - cockpitpos) * (projectionDistanceFromCockpit - 1));
-                    leadProjector.Enable();
-                    Echo("Updated leadProjector");
-                }
-
-
                 if (autoAim != null)
                 {
-                    var dist = intersection.Value - cockpitpos;
+                    var dist = intersection.Value - cockpitPosition;
                     var direction = SpreadVectors(Vector3D.Normalize(dist), 0.0174532925);
 
                     autoAim.SetTarget(direction);
@@ -210,14 +133,6 @@ namespace IngameScript
             }
             else
             {
-                Echo("Disabling Targeting/Projectors");
-
-                if (leadProjector != null)
-                    leadProjector.Disable();
-
-                if (projector != null)
-                    projector.Disable();
-
                 DisposeAuto();
             }
         
