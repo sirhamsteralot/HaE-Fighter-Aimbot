@@ -24,13 +24,8 @@ namespace IngameScript
             private IMyShipController cockpit;
 
             public Vector3D target;
-
-            Program P;
-
             public GyroRotation(Program P, IMyShipController cockpit)
             {
-                this.P = P;
-
                 P.GridTerminalSystem.GetBlocksOfType(gyros);
                 this.cockpit = cockpit;
             }
@@ -53,22 +48,7 @@ namespace IngameScript
                 if (!target.Equals(NewTarget))
                 {
                     target = NewTarget;
-
-                    P.Echo("Set The target to: \n" + this.target.ToString());
                 }
-            }
-
-            public void SetTargetFromString(string target)
-            {
-                if (Vector3D.TryParse(target, out this.target))
-                {
-                    P.Echo("Set Target to: " + this.target.ToString());
-                }
-                else
-                {
-                    P.Echo("Parsing Failed");
-                }
-
             }
 
             public void SetTargetDirection(Vector3D direction, double howFarOut)
