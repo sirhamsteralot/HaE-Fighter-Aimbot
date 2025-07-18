@@ -109,8 +109,6 @@ namespace IngameScript
 
                     DisposeAuto();
                 }
-
-
             }
 
             if (autoAim != null || ((updateSource & UpdateType.Update10) == UpdateType.Update10))

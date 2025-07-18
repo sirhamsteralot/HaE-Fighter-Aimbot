@@ -22,8 +22,8 @@ namespace IngameScript
         {
             private List<IMyGyro> gyros = new List<IMyGyro>();
             private IMyShipController cockpit;
-            private PIDController yawPID = new PIDController(6, 0.0, 0.0);
-            private PIDController pitchPID = new PIDController(6, 0.0, 0.0);
+            private PIDController yawPID = new PIDController(10, 0.0, 0.0);
+            private PIDController pitchPID = new PIDController(10, 0.0, 0.0);
 
             public Vector3D target;
             public GyroRotation(Program P, IMyShipController cockpit)
