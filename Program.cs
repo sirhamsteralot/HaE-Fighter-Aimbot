@@ -216,10 +216,11 @@ namespace IngameScript
             if (!t.HasValue || t.Value < 0)
                 return null;
 
-            double time = t.Value + 1.0/60.0; // add one tick because we can only ever aim for the next tick at best
+            double time = t.Value + 1.5/60.0; // add one tick because we can only ever aim for the next tick at best
+            double maxAccelTime = Math.Min(2, time);
 
             // Predict future target position using uniformly accelerated motion
-            Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * acceleration * time * time;
+            Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * (acceleration * maxAccelTime * maxAccelTime);
 
             return futureTargetPosition;
         }
