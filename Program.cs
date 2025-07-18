@@ -19,17 +19,13 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         #region Serializers
-        INISerializer nameSerializer = new INISerializer("Blocknames");
-
-        string COCKPITNAME { get { return (string)nameSerializer.GetValue("COCKPITNAME"); } }
-
         INISerializer parameterSerializer = new INISerializer("Parameters");
         double projectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
         double _projectileVelocity;
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.1.0";
+        const string versionString = "v1.1.2";
 
         int update100Counter = 0;
         double averageRuntime = 0;
@@ -48,20 +44,30 @@ namespace IngameScript
             Runtime.UpdateFrequency = UpdateFrequency.Update1 | UpdateFrequency.Update10 | UpdateFrequency.Update100;
 
             #region serializer
-            nameSerializer.AddValue("COCKPITNAME", x => x, "Cockpit");
             parameterSerializer.AddValue("projectileVelocity", x => double.Parse(x), 400);
 
             string customDat = Me.CustomData;
-            nameSerializer.FirstSerialization(ref customDat);
             parameterSerializer.FirstSerialization(ref customDat);
             Me.CustomData = customDat;
-            nameSerializer.DeSerialize(Me.CustomData);
             parameterSerializer.DeSerialize(Me.CustomData);
             #endregion
 
-            cockpit = GridTerminalSystem.GetBlockWithName(COCKPITNAME) as IMyShipController;
+            GridTerminalSystem.GetBlocksOfType<IMyCockpit>(null, x =>
+            {
+                if (x.IsMainCockpit)
+                {
+                    cockpit = x;
+                }
+                else if (cockpit == null)
+                {
+                    cockpit = x;
+                }
+
+                return false;
+            });
+
             if (cockpit == null)
-                throw new Exception($"No cockpit named \"{COCKPITNAME}\"");
+                throw new Exception($"No cockpit found!");
 
             var gunList = new List<IMyUserControllableGun>();
             GridTerminalSystem.GetBlocksOfType(gunList, x => x is IMySmallGatlingGun);
@@ -131,7 +137,7 @@ namespace IngameScript
 
             if (!oldTarget.IsEmpty())
             {
-                Vector3D targetAcceleration = Vector3D.Lerp((target.Velocity - oldTarget.Velocity) * 60, oldTargetAcceleration, 0.5);
+                Vector3D targetAcceleration = Vector3D.Lerp((target.Velocity - oldTarget.Velocity) * 60, oldTargetAcceleration, 0.8);
                 oldTargetAcceleration = targetAcceleration;
 
                 acceleration += targetAcceleration;
@@ -212,7 +218,7 @@ namespace IngameScript
             if (!t.HasValue || t.Value < 0)
                 return null;
 
-            double time = t.Value;
+            double time = t.Value + 1.0/60.0; // add one tick because we can only ever aim for the next tick at best
 
             // Predict future target position using uniformly accelerated motion
             Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * acceleration * time * time;
