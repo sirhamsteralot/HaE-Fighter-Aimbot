@@ -103,7 +103,7 @@ namespace IngameScript
                 return null;
             }
 
-            private static double? SolveQuadraticFast(double a, double b, double c)
+            public static double? SolveQuadraticFast(double a, double b, double c)
             {
                 if (Math.Abs(a) < 1e-8)
                 {

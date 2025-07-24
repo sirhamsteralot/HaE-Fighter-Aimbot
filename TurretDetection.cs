@@ -20,7 +20,7 @@ namespace IngameScript
     {
         public class TurretDetection
         {
-            public const float maxRange = 45f;
+
             public const long Timeout = 120;
 
             public List<IMyTurretControlBlock> turrets;

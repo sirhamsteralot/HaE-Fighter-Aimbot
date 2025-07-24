@@ -20,12 +20,12 @@ namespace IngameScript
     {
         #region Serializers
         INISerializer parameterSerializer = new INISerializer("Parameters");
-        double projectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
+        double ProjectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
         double _projectileVelocity;
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.1.3";
+        const string versionString = "v1.1.6";
 
         int update100Counter = 0;
         double averageRuntime = 0;
@@ -38,6 +38,8 @@ namespace IngameScript
         GyroRotation autoAim;
 
         Vector3D oldTargetAcceleration;
+        Vector3D oldMyAcceleration;
+        Vector3D oldMyVelocity;
 
         public Program()
         {
@@ -80,7 +82,7 @@ namespace IngameScript
             DisposeAuto();
 
             random = new Random();
-            _projectileVelocity = projectileVelocity;
+            _projectileVelocity = ProjectileVelocity;
         }
 
         public void Main(string argument, UpdateType updateSource)
@@ -127,34 +129,36 @@ namespace IngameScript
             }
         }
 
+        
         public void GetTargetInterception(MyDetectedEntityInfo target, MyDetectedEntityInfo oldTarget)
         {
             Vector3D cockpitPosition = cockpit.WorldMatrix.Translation;
             Vector3D velocity = cockpit.GetShipVelocities().LinearVelocity;
-            Vector3D acceleration = -cockpit.GetNaturalGravity();
+            Vector3D tAcceleration = -cockpit.GetNaturalGravity();
+            Vector3D myAcceleration = velocity - oldMyVelocity;
+            oldMyVelocity = velocity;
+
+            myAcceleration = Vector3D.Lerp(myAcceleration * 60, oldMyAcceleration, 0.8);
+            oldMyAcceleration = myAcceleration;
 
             if (!oldTarget.IsEmpty())
             {
                 Vector3D targetAcceleration = Vector3D.Lerp((target.Velocity - oldTarget.Velocity) * 60, oldTargetAcceleration, 0.8);
                 oldTargetAcceleration = targetAcceleration;
 
-                acceleration += targetAcceleration;
+                tAcceleration += targetAcceleration;
             }
 
-            var intersection = SimulateTrajectory(target, acceleration, cockpitPosition, velocity, projectileVelocity);
+            var intersection = SimulateTrajectory(target, tAcceleration, cockpitPosition, velocity, myAcceleration, _projectileVelocity);
             if (intersection.HasValue)
             {
                 if (autoAim != null)
                 {
                     var dist = intersection.Value - cockpitPosition;
-                    var direction = SpreadVectors(Vector3D.Normalize(dist), 0.0174532925);
+                    var direction = Vector3D.Normalize(dist);
 
                     autoAim.SetTargetDirection(Vector3D.Normalize(direction));
                 }
-            }
-            else
-            {
-                DisposeAuto();
             }
         }
 
@@ -188,43 +192,32 @@ namespace IngameScript
             autoAim = null;
         }
 
-        public Vector3D? SimulateTrajectory(MyDetectedEntityInfo target, Vector3D acceleration, Vector3D myPosition, Vector3D myVelocity, double projectileVelocity)
+        public Vector3D? SimulateTrajectory(MyDetectedEntityInfo target, Vector3D targetAccel, Vector3D myPosition, Vector3D myVelocity, Vector3D myAcceleration, double projectileSpeed)
         {
+            double ticksUntilShoot = 2;
+
+            double stepTime = 1.0 / 60.0;
+            double dt = stepTime * ticksUntilShoot;
+
+            Vector3D predMyPos = myPosition + myVelocity * dt + 0.5*myAcceleration*dt*dt;
+
             Vector3D relVelocity = target.Velocity - myVelocity;
-            Vector3D P0 = target.Position;
-            Vector3D V0 = relVelocity;
+            Vector3D D = target.Position - predMyPos;
 
-            if (V0.LengthSquared() < 0.0001) // More robust zero-speed check
-                return P0;
+            double a = relVelocity.LengthSquared() - projectileSpeed * projectileSpeed;
+            double b = 2 * Vector3D.Dot(D, relVelocity);
+            double c = D.LengthSquared();
 
-            Vector3D P1 = myPosition;
-            Vector3D D = P0 - P1;
-            double projectileSpeed = projectileVelocity;
-
-            Vector3D halfA = 0.5 * acceleration;
-
-            // Quartic coefficients: a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
-            double a = halfA.LengthSquared();
-            double b = 2 * Vector3D.Dot(halfA, V0);
-            double c = V0.LengthSquared() + 2 * Vector3D.Dot(halfA, D) - projectileSpeed * projectileSpeed;
-            double d = 2 * Vector3D.Dot(V0, D);
-            double e = D.LengthSquared();
-
-            // Solve quartic for time-to-intercept
-            double? t = FastRootSolver.SolveQuarticFast(a, b, c, d, e);
-
+            // Solve quadratic (since no acceleration is assumed)
+            double? t = FastRootSolver.SolveQuadraticFast(a, b, c);
             if (!t.HasValue || t.Value < 0)
-                return null;
+            return null;
 
-            double time = t.Value + 1.5/60.0; // add one tick because we can only ever aim for the next tick at best
-            double maxAccelTime = Math.Min(2, time);
-
-            // Predict future target position using uniformly accelerated motion
-            Vector3D futureTargetPosition = P0 + V0 * time + 0.5 * (acceleration * maxAccelTime * maxAccelTime);
-
+            double time = t.Value + (dt * ticksUntilShoot);
+            Vector3D futureTargetPosition = target.Position + relVelocity * time + targetAccel * 0.5 * time * time;
             return futureTargetPosition;
         }
-        
+
 
     }
 }
