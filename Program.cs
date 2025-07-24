@@ -217,7 +217,5 @@ namespace IngameScript
             Vector3D futureTargetPosition = target.Position + relVelocity * time + targetAccel * 0.5 * time * time;
             return futureTargetPosition;
         }
-
-
     }
 }
