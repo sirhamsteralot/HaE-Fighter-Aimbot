@@ -25,7 +25,7 @@ namespace IngameScript
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.1.6";
+        const string versionString = "v1.1.7";
 
         int update100Counter = 0;
         double averageRuntime = 0;
@@ -40,6 +40,13 @@ namespace IngameScript
         Vector3D oldTargetAcceleration;
         Vector3D oldMyAcceleration;
         Vector3D oldMyVelocity;
+        Scheduler gunScheduler;
+
+        List<IMyUserControllableGun> guns = new List<IMyUserControllableGun>();
+        bool activeShooting = false;
+        int currentlyShootingGun = -1;
+
+        double FullCycleIntent = 6;
 
         public Program()
         {
@@ -68,6 +75,8 @@ namespace IngameScript
                 return false;
             });
 
+            GridTerminalSystem.GetBlocksOfType(guns);
+
             if (cockpit == null)
                 throw new Exception($"No cockpit found!");
 
@@ -83,6 +92,9 @@ namespace IngameScript
 
             random = new Random();
             _projectileVelocity = ProjectileVelocity;
+
+            gunScheduler = new Scheduler();
+            gunScheduler.AddTask(GunLoop());
         }
 
         public void Main(string argument, UpdateType updateSource)
@@ -93,6 +105,7 @@ namespace IngameScript
             {
                 Echo($"HaE Fighter Aimbot {versionString}");
                 Echo(runningIndicator[update100Counter++ % runningIndicator.Length]);
+                Echo($"shooting: {activeShooting}");
                 Echo($"tracking: {turretDetection.currentlyTracking}");
                 Echo($"runtime average: {averageRuntime:N4}");
             }
@@ -113,6 +126,11 @@ namespace IngameScript
                 }
             }
 
+            if ((updateSource & UpdateType.Update1) == UpdateType.Update1)
+            {
+                gunScheduler.Main();
+            }
+
             if (autoAim != null || ((updateSource & UpdateType.Update10) == UpdateType.Update10))
             {
                 turretDetection.GetTarget(Runtime.LifetimeTicks);
@@ -121,12 +139,98 @@ namespace IngameScript
                 {
                     GetTargetInterception(turretDetection.detected, turretDetection.oldDetected);
                 }
+                CheckShooting();
             }
 
             if ((updateSource & UpdateType.Update1) == UpdateType.Update1 && autoAim != null)
             {
                 autoAim.MainRotate(Runtime.LifetimeTicks);
             }
+        }
+
+        public IEnumerator<bool> GunLoop()
+        {
+            int gunCount = guns.Count;
+            int tickDelay = (int)Math.Floor(FullCycleIntent*60 / (double)gunCount) - gunCount;
+
+
+            while (true)
+            {
+                if (activeShooting)
+                {
+                    for (int i = 0; i < gunCount; i++)
+                    {
+                        if (i == currentlyShootingGun)
+                        {
+                            continue;
+                        }
+
+                        guns[i].Enabled = false;
+                    }
+
+                    for (int i = 0; i < gunCount; i++)
+                    {
+                        if (i == currentlyShootingGun)
+                        {
+                            continue;
+                        }
+
+                        guns[i].Enabled = true;
+
+                        if (!activeShooting)
+                            break;
+
+                        yield return true;
+
+                        if (!activeShooting)
+                            break;
+
+                        guns[i].Enabled = false;
+
+                        for (int j = 0; j < tickDelay; j++)
+                        {
+                            if (!activeShooting)
+                                break;
+
+                            yield return true;
+                        }
+                    }
+                }
+
+                yield return true;
+            }
+        }
+
+        public void CheckShooting()
+        {
+            if (activeShooting)
+            {
+                if (!guns[currentlyShootingGun].IsShooting)
+                {
+                    activeShooting = false;
+                    currentlyShootingGun = -1;
+
+                    foreach (var gun in guns)
+                    {
+                        gun.Enabled = true;
+                    }
+                }
+
+                return;
+            }
+
+            for (int i = 0; i < guns.Count; i++)
+            {
+                if (guns[i].IsShooting)
+                {
+                    currentlyShootingGun = i;
+                    activeShooting = true;
+                    return;
+                }
+            }
+
+            activeShooting = false;
+            currentlyShootingGun = -1;
         }
 
         
