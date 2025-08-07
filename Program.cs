@@ -27,7 +27,7 @@ namespace IngameScript
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.1.9";
+        const string versionString = "v1.1.11";
 
         int update100Counter = 0;
         double averageRuntime = 0;
