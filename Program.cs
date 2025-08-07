@@ -18,6 +18,8 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
+        const bool Sequencer = false;
+
         #region Serializers
         INISerializer parameterSerializer = new INISerializer("Parameters");
         double ProjectileVelocity { get { return (double)parameterSerializer.GetValue("projectileVelocity"); } }
@@ -25,7 +27,7 @@ namespace IngameScript
         #endregion
 
         private readonly string[] runningIndicator = new string[] { "- - - - -", "- - 0 - -", "- 0 - 0 -", "0 - 0 - 0", "- 0 - 0 -", "- - 0 - -" };
-        const string versionString = "v1.1.7";
+        const string versionString = "v1.1.9";
 
         int update100Counter = 0;
         double averageRuntime = 0;
@@ -45,8 +47,9 @@ namespace IngameScript
         List<IMyUserControllableGun> guns = new List<IMyUserControllableGun>();
         bool activeShooting = false;
         int currentlyShootingGun = -1;
+        string currentlyShootingType = "";
 
-        double FullCycleIntent = 6;
+        double FullCycleIntent = 2;
 
         public Program()
         {
@@ -128,7 +131,8 @@ namespace IngameScript
 
             if ((updateSource & UpdateType.Update1) == UpdateType.Update1)
             {
-                gunScheduler.Main();
+                if (Sequencer)
+                    gunScheduler.Main();
             }
 
             if (autoAim != null || ((updateSource & UpdateType.Update10) == UpdateType.Update10))
@@ -139,41 +143,45 @@ namespace IngameScript
                 {
                     GetTargetInterception(turretDetection.detected, turretDetection.oldDetected);
                 }
-                CheckShooting();
+
             }
 
             if ((updateSource & UpdateType.Update1) == UpdateType.Update1 && autoAim != null)
             {
                 autoAim.MainRotate(Runtime.LifetimeTicks);
+                if (Sequencer)
+                    CheckShooting();
             }
         }
 
         public IEnumerator<bool> GunLoop()
         {
-            int gunCount = guns.Count;
-            int tickDelay = (int)Math.Floor(FullCycleIntent*60 / (double)gunCount) - gunCount;
-
-
             while (true)
             {
+                int gunCount = guns.Count(x => x.BlockDefinition.SubtypeId == currentlyShootingType);
+                int tickDelay = (int)Math.Floor(FullCycleIntent*60 / (double)gunCount) - gunCount;
+
                 if (activeShooting)
                 {
-                    for (int i = 0; i < gunCount; i++)
+                    for (int i = 0; i < guns.Count; i++)
                     {
                         if (i == currentlyShootingGun)
-                        {
                             continue;
-                        }
+
+                        if (guns[i].BlockDefinition.SubtypeId != currentlyShootingType)
+                            continue;
 
                         guns[i].Enabled = false;
                     }
 
-                    for (int i = 0; i < gunCount; i++)
+                    for (int i = 0; i < guns.Count; i++)
                     {
+                        Echo(guns[i].BlockDefinition.SubtypeId);
                         if (i == currentlyShootingGun)
-                        {
                             continue;
-                        }
+
+                        if (guns[i].BlockDefinition.SubtypeId != currentlyShootingType)
+                            continue;
 
                         guns[i].Enabled = true;
 
@@ -225,6 +233,7 @@ namespace IngameScript
                 {
                     currentlyShootingGun = i;
                     activeShooting = true;
+                    currentlyShootingType = guns[i].BlockDefinition.SubtypeId;
                     return;
                 }
             }
